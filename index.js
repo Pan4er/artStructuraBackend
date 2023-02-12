@@ -7,7 +7,6 @@ const port = 8000;
 const app = express();
 app.use(express.json());
 app.use(cors())
-
 const client = new Client({
     user: "yadmin",
     password: "pass",
@@ -37,7 +36,7 @@ app.get('/videos/id/:id', (request, response) => {
     client.query(`SELECT public."websiteVideo".id, video_name, video_description, video_url, thumbnail_url
 	FROM public."websiteVideo" WHERE public."websiteVideo".id = $1;`, [request.params.id], (err, res) => {
         if (!err) {
-            response.json({ "video": res.rows[0] })
+            response.json(res.rows[0])
         } else {
             response.json(err.message)
         }
@@ -93,6 +92,7 @@ app.get('/trainingsAll/:lim', (request, response) => {
 
 
 
+
 app.get('/trainingsByWord/:word/:lim', (request, response) => {
 
     client.query(`SELECT public.trainings.id, training_name, image_url, video_url, categorie_id, training_comment, training_name_en, training_comment_en
@@ -130,7 +130,6 @@ app.get('/trainingsByCategorie/:cat/:lim', (request, response) => {
         }
     })
 })
-
 
 app.get('/trainingsByCategorieWordFilter/:cat/:word/:lim', (request, response) => {
     client.query(`SELECT public.trainings.id, training_name, image_url, video_url, categorie_id, training_comment, training_name_en, training_comment_en
@@ -185,26 +184,6 @@ app.get('/excersises/:trainid', (request, response) => {
 
 })
 
-app.use('/prefTrainings', (request, response) => {
-    let ids = request.query.id
-    client.query(`SELECT public.trainings.id, training_name, image_url, video_url, categorie_id, training_comment, training_name_en, training_comment_en
-    FROM public.trainings
-    WHERE public.trainings.id IN (${ids})`, (err, res) => {
-        if (!err) {
-            response.json({
-                "trainings": res.rows
-            })
-        } else {
-            response.json(err.message)
-        }
-    })
-
-})
-
-
-
-
-
 
 //-------------------------------------------- HEALTH
 
@@ -228,6 +207,8 @@ app.get('/healthAll/:lim', (request, response) => {
     })
 
 })
+
+
 
 app.get('/healthByWord/:word/:lim', (request, response) => {
 
@@ -330,24 +311,6 @@ app.get('/healthExcersises/:trainid', (request, response) => {
 
 })
 
-app.use('/prefHealth', (request, response) => {
-    let ids = request.query.id
-    client.query(`SELECT public.health.id, health_name, image_url, 
-    video_url, "hCategorie_id", health_comment,
-    health_name_en, health_comment_en
-    FROM public.health
-    WHERE public.health.id IN (${ids})`, (err, res) => {
-        if (!err) {
-            response.json({
-                "healthList": res.rows
-            })
-        } else {
-            response.json(err.message)
-        }
-    })
-
-})
-
 app.get('/musicByCategorie/:cat/:lim', (request, response) => {
     client.query(`SELECT 
 	public.music.id, 
@@ -381,6 +344,48 @@ app.get('/musicCategories', (request, response) => {
 
 })
 
+//------------------------constructor--------------------------------
+
+
+
+
+app.post('/constructor', async(request, response) => {
+    let bufferData = []
+    let responseData = []
+    let tags = request.body.tags
+
+    for (let index = 0; index < tags.length; index++) {
+        let query = await client.query(`SELECT * FROM public."constructor_${tags[index]}" ORDER BY RANDOM() limit 5;`)
+
+        bufferData.push(query.rows)
+    }
+
+    bufferData.forEach(element => {
+        element.forEach(exObject => {
+            delete exObject.ex_id
+            responseData.push(exObject)
+        });
+    });
+
+
+    response.json({ "generatedTraining": responseData })
+})
+
+
+app.get('/constructorCategories', (request, response) => {
+
+    client.query(`SELECT *
+	FROM public."constructor_all";`, (err, res) => {
+        if (!err) {
+            response.json({
+                "constructorCategories": res.rows
+            })
+        } else {
+            response.json(err.message)
+        }
+    })
+
+})
 
 
 
